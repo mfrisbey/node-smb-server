@@ -21,6 +21,7 @@ describe('RQTree', function () {
     c = new RQCommon();
 
     spyOn(c.remoteTree, 'list').andCallThrough();
+    spyOn(c.remoteTree, 'listExt').andCallThrough();
   });
 
   describe('Exists', function () {
@@ -102,7 +103,7 @@ describe('RQTree', function () {
                     expect(file.lastModified()).toEqual(remoteFile.lastModified());
                     setTimeout(function () {
                       // pause ever so slightly to allow time to change
-                      c.testTree.refreshWorkFiles('/testfile', function (err) {
+                      c.testTree.refreshWorkFiles(c.testContext, '/testfile', function (err) {
                         expect(err).toBeFalsy();
                         c.localTree.open('/testfile', function (err, file) {
                           expect(err).toBeFalsy();
@@ -124,7 +125,7 @@ describe('RQTree', function () {
     it('testRefreshWorkFilesMissing', function (done) {
       c.addFile(c.remoteTree, '/testfile', function () {
         c.addFile(c.localTree, '/testfile', function () {
-          c.testTree.refreshWorkFiles('/testfile', function (err) {
+          c.testTree.refreshWorkFiles(c.testContext, '/testfile', function (err) {
             expect(err).toBeFalsy();
             done();
           });
@@ -136,7 +137,7 @@ describe('RQTree', function () {
   describe('CanDelete', function () {
     it('testCanDeleteRemoteOnlyPath', function (done) {
       c.addFile(c.remoteTree, '/testfile', function (remoteFile) {
-        c.testTree.canDelete('/testfile', function (err, canDelete) {
+        c.testTree.canDelete(c.testContext, '/testfile', function (err, canDelete) {
           expect(err).toBeFalsy();
           expect(canDelete).toBeTruthy();
           done();
@@ -146,7 +147,7 @@ describe('RQTree', function () {
 
     it('testCanDeleteRemoteOnlyFile', function (done) {
       c.addFile(c.remoteTree, '/testfile', function (remoteFile) {
-        c.testTree.canDelete('/testfile', function (err, canDelete) {
+        c.testTree.canDelete(c.testContext, '/testfile', function (err, canDelete) {
           expect(err).toBeFalsy();
           expect(canDelete).toBeTruthy();
           done();
@@ -156,10 +157,10 @@ describe('RQTree', function () {
 
     it('testCanDeleteDirectory', function (done) {
       c.addDirectory(c.localTree, '/test', function (dir) {
-        c.testTree.canDelete('/test', function (err, canDelete) {
+        c.testTree.canDelete(c.testContext, '/test', function (err, canDelete) {
           expect(err).toBeFalsy();
           expect(canDelete).toBeTruthy();
-          c.testTree.canDelete('/test', function (err, canDelete) {
+          c.testTree.canDelete(c.testContext, '/test', function (err, canDelete) {
             expect(err).toBeFalsy();
             expect(canDelete).toBeTruthy();
             done();
@@ -173,10 +174,10 @@ describe('RQTree', function () {
         c.testTree.open('/testfile', function (err, rqFile) {
           rqFile.cacheFile(function (err, localFile) {
             expect(err).toBeFalsy();
-            c.testTree.canDelete('/testfile', function (err, canDelete) {
+            c.testTree.canDelete(c.testContext, '/testfile', function (err, canDelete) {
               expect(err).toBeFalsy();
               expect(canDelete).toBeTruthy();
-              c.testTree.canDelete('/testfile', function (err, canDelete) {
+              c.testTree.canDelete(c.testContext, '/testfile', function (err, canDelete) {
                 expect(canDelete).toBeTruthy();
                 c.expectLocalFileExist('/testfile', true, false, done);
               });
@@ -197,10 +198,10 @@ describe('RQTree', function () {
               expect(err).toBeFalsy();
               c.testTree.open('/testfile', function (err, rqFile) {
                 expect(err).toBeFalsy();
-                c.testTree.canDelete('/testfile', function (err, canDelete) {
+                c.testTree.canDelete(c.testContext, '/testfile', function (err, canDelete) {
                   expect(err).toBeFalsy();
                   expect(canDelete).toBeFalsy();
-                  c.testTree.canDelete('/testfile', function (err, canDelete) {
+                  c.testTree.canDelete(c.testContext, '/testfile', function (err, canDelete) {
                     expect(err).toBeFalsy();
                     expect(canDelete).toBeFalsy();
                     done();
@@ -215,7 +216,7 @@ describe('RQTree', function () {
 
     it('testCanDeleteFileLocallyCreated', function (done) {
       c.addQueuedFile('/testfile', function (file) {
-        c.testTree.canDelete('/testfile', function (err, canDelete) {
+        c.testTree.canDelete(c.testContext, '/testfile', function (err, canDelete) {
           expect(err).toBeFalsy();
           expect(canDelete).toBeFalsy();
           c.expectLocalFileExist('/testfile', true, true, done);
@@ -225,7 +226,7 @@ describe('RQTree', function () {
 
     it('testCanDeleteMissingWorkFile', function (done) {
       c.addFile(c.localTree, '/testfile', function () {
-        c.testTree.canDelete('/testfile', function (err, canDelete) {
+        c.testTree.canDelete(c.testContext, '/testfile', function (err, canDelete) {
           expect(err).toBeFalsy();
           expect(canDelete).toBeFalsy();
           done();
@@ -457,13 +458,13 @@ describe('RQTree', function () {
         c.testTree.list('/*', function (err, files) {
           expect(err).toBeFalsy();
           expect(files.length).toEqual(1);
-          expect(c.remoteTree.list.calls.length).toEqual(1);
+          expect(c.remoteTree.listExt.calls.length).toEqual(1);
 
           c.testTree.list('/*', function (err, files) {
             // should be cached now
             expect(err).toBeFalsy();
             expect(files.length).toEqual(1);
-            expect(c.remoteTree.list.calls.length).toEqual(1);
+            expect(c.remoteTree.listExt.calls.length).toEqual(1);
             done();
           });
         });
@@ -475,13 +476,13 @@ describe('RQTree', function () {
         c.testTree.list('/*', function (err, files) {
           expect(err).toBeFalsy();
           expect(files.length).toEqual(1);
-          expect(c.remoteTree.list.calls.length).toEqual(1);
+          expect(c.remoteTree.listExt.calls.length).toEqual(1);
 
           setTimeout(function () {
             c.testTree.list('/*', function (err, files) {
               expect(err).toBeFalsy();
               expect(files.length).toEqual(1);
-              expect(c.remoteTree.list.calls.length).toEqual(2);
+              expect(c.remoteTree.listExt.calls.length).toEqual(2);
               done();
             });
           }, 500);
@@ -558,7 +559,7 @@ describe('RQTree', function () {
         c.addLocalFile('/removeme/file1', function () {
           c.addDirectory(c.localTree, '/removeme/subfolder', function () {
             c.addLocalFile('/removeme/subfolder/file2', function () {
-              c.testTree.deleteLocalDirectoryRecursive('/', function (err) {
+              c.testTree.deleteLocalDirectoryRecursive(c.testContext, '/', function (err) {
                 expect(err).toBeFalsy();
                 c.expectPathExist(c.localTree, '/removeme', false, function () {
                   c.expectPathExist(c.localTree, '/removeme/subfolder', false, function () {
@@ -586,7 +587,7 @@ describe('RQTree', function () {
                 file.setLastModified(file.lastModified() + 100000);
                 file.close(function (err) {
                   expect(err).toBeFalsy();
-                  c.testTree.deleteLocalDirectoryRecursive('/removeme', function (err) {
+                  c.testTree.deleteLocalDirectoryRecursive(c.testContext, '/removeme', function (err) {
                     expect(err).toBeFalsy();
                     c.expectPathExist(c.localTree, '/removeme', true, function () {
                       c.expectPathExist(c.localTree, '/removeme/sub', true, function () {
@@ -623,7 +624,7 @@ describe('RQTree', function () {
                       expect(err).toBeFalsy();
                       file.cacheFile(function (err, cached) {
                         c.addQueuedFile('/removeme/file3', function () {
-                          c.testTree.deleteLocalDirectoryRecursive('/removeme', function (err) {
+                          c.testTree.deleteLocalDirectoryRecursive(c.testContext, '/removeme', function (err) {
                             expect(err).toBeFalsy();
                             c.expectLocalFileExist('/remoteme/file3', false, false, function () {
                               expect(c.testShare.emit).toHaveBeenCalledWith('syncconflict', {path: '/removeme/file3'});
@@ -646,28 +647,28 @@ describe('RQTree', function () {
 
   describe('QueueData', function () {
     it('testQueueData', function (done) {
-      c.testTree.queueData('/testfile', 'PUT', false, function (err) {
+      c.testTree.queueData(c.testContext, '/testfile', 'PUT', false, function (err) {
         expect(err).toBeFalsy();
         c.expectQueuedMethod('/', 'testfile', 'PUT', done);
       });
     });
 
     it('testQueueDataNewName', function (done) {
-      c.testTree.queueData('/testfile', 'PUT', '/testfile2', function (err) {
+      c.testTree.queueData(c.testContext, '/testfile', 'PUT', '/testfile2', function (err) {
         expect(err).toBeFalsy();
         c.expectQueuedMethod('/', 'testfile', 'PUT', done);
       });
     });
 
     it('testQueueDataTempFile', function (done) {
-      c.testTree.queueData('/.tempfile', 'PUT', false, function (err) {
+      c.testTree.queueData(c.testContext, '/.tempfile', 'PUT', false, function (err) {
         expect(err).toBeFalsy();
         c.expectQueuedMethod('/', '.tempfile', false, done);
       });
     });
 
     it('testQueueDataTempFileDestTempFile', function (done) {
-      c.testTree.queueData('/.tempfile', 'MOVE', '/.tempfile2', function (err) {
+      c.testTree.queueData(c.testContext, '/.tempfile', 'MOVE', '/.tempfile2', function (err) {
         expect(err).toBeFalsy();
         c.expectQueuedMethod('/', '.tempfile', false, function () {
           c.expectQueuedMethod('/', '.tempfile2', false, done);
@@ -676,7 +677,7 @@ describe('RQTree', function () {
     });
 
     it('testQueueDataTempFileDestNormalFile', function (done) {
-      c.testTree.queueData('/.tempfile', 'MOVE', '/testfile', function (err) {
+      c.testTree.queueData(c.testContext, '/.tempfile', 'MOVE', '/testfile', function (err) {
         expect(err).toBeFalsy();
         c.expectQueuedMethod('/', '.tempfile', false, function () {
           c.expectQueuedMethod('/', 'testfile', 'PUT', done);
@@ -686,7 +687,7 @@ describe('RQTree', function () {
 
     it('testQueueDataNormalFileDestTempFile', function (done) {
       c.addQueuedFile('/testfile', function () {
-        c.testTree.queueData('/testfile', 'MOVE', '/.tempfile', function (err) {
+        c.testTree.queueData(c.testContext, '/testfile', 'MOVE', '/.tempfile', function (err) {
           expect(err).toBeFalsy();
           c.expectQueuedMethod('/', 'testfile', false, function () {
             c.expectQueuedMethod('/', '.tempfile', false, done);
@@ -696,7 +697,7 @@ describe('RQTree', function () {
     });
 
     it('testQueueDataNormalFileDestNormalFile', function (done) {
-      c.testTree.queueData('/testfile', 'MOVE', '/testfile2', function (err) {
+      c.testTree.queueData(c.testContext, '/testfile', 'MOVE', '/testfile2', function (err) {
         expect(err).toBeFalsy();
         c.expectQueuedMethod('/', 'testfile', 'DELETE', function () {
           c.expectQueuedMethod('/', 'testfile2', 'PUT', done);
@@ -705,7 +706,7 @@ describe('RQTree', function () {
     });
 
     it('testQueueDataCopyTempFileDestTempFile', function (done) {
-      c.testTree.queueData('/.tempfile', 'COPY', '/.tempfile2', function (err) {
+      c.testTree.queueData(c.testContext, '/.tempfile', 'COPY', '/.tempfile2', function (err) {
         expect(err).toBeFalsy();
         c.expectQueuedMethod('/', '.tempfile', false, function () {
           c.expectQueuedMethod('/', '.tempfile2', false, done);
@@ -714,7 +715,7 @@ describe('RQTree', function () {
     });
 
     it('testQueueDataCopyTempFileDestNormalFile', function (done) {
-      c.testTree.queueData('/.tempfile', 'COPY', '/testfile', function (err) {
+      c.testTree.queueData(c.testContext, '/.tempfile', 'COPY', '/testfile', function (err) {
         expect(err).toBeFalsy();
         c.expectQueuedMethod('/', '.tempfile', false, function () {
           c.expectQueuedMethod('/', 'testfile', 'PUT', done);
@@ -724,7 +725,7 @@ describe('RQTree', function () {
 
     it('testQueueDataCopyNormalFileDestTempFile', function (done) {
       c.addQueuedFile('/testfile', function () {
-        c.testTree.queueData('/testfile', 'COPY', '/.tempfile', function (err) {
+        c.testTree.queueData(c.testContext, '/testfile', 'COPY', '/.tempfile', function (err) {
           expect(err).toBeFalsy();
           c.expectQueuedMethod('/', 'testfile', 'PUT', function () {
             c.expectQueuedMethod('/', '.tempfile', false, done);
@@ -734,7 +735,7 @@ describe('RQTree', function () {
     });
 
     it('testQueueDataCopyNormalFileDestNormalFile', function (done) {
-      c.testTree.queueData('/testfile', 'COPY', '/testfile2', function (err) {
+      c.testTree.queueData(c.testContext, '/testfile', 'COPY', '/testfile2', function (err) {
         expect(err).toBeFalsy();
         c.expectQueuedMethod('/', 'testfile', false, function () {
           c.expectQueuedMethod('/', 'testfile2', 'PUT', done);

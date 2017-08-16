@@ -20,11 +20,11 @@ describe('LocalTreeTests', function () {
   });
 
   it('testCacheInfoExists', function (done) {
-    c.localTree.cacheInfoExists('/test', function (err, exists) {
+    c.localTree.cacheInfoExists(c.testContext, '/test', function (err, exists) {
       expect(err).toBeFalsy();
       expect(exists).toBeFalsy();
       c.addFile(c.localRawTree, '/.aem/test.json', function () {
-        c.localTree.cacheInfoExists('/test', function (err, exists) {
+        c.localTree.cacheInfoExists(c.testContext, '/test', function (err, exists) {
           expect(err).toBeFalsy();
           expect(exists).toBeTruthy();
           done();
@@ -39,17 +39,17 @@ describe('LocalTreeTests', function () {
 
   describe('Downloading', function () {
     it('testIsDownloading', function (done) {
-      c.localTree.isDownloading('/testfile', function (err, isDownloading) {
+      c.localTree.isDownloading(c.testContext, '/testfile', function (err, isDownloading) {
         expect(err).toBeFalsy();
         expect(isDownloading).toBeFalsy();
-        c.localTree.setDownloading('/testfile', true, function (err) {
+        c.localTree.setDownloading(c.testContext, '/testfile', true, function (err) {
           expect(err).toBeFalsy();
-          c.localTree.isDownloading('/testfile', function (err, isDownloading) {
+          c.localTree.isDownloading(c.testContext, '/testfile', function (err, isDownloading) {
             expect(err).toBeFalsy();
             expect(isDownloading).toBeTruthy();
-            c.localTree.setDownloading('/testfile', false, function (err) {
+            c.localTree.setDownloading(c.testContext, '/testfile', false, function (err) {
               expect(err).toBeFalsy();
-              c.localTree.isDownloading('/testfile', function (err, isDownloading) {
+              c.localTree.isDownloading(c.testContext, '/testfile', function (err, isDownloading) {
                 expect(err).toBeFalsy();
                 expect(isDownloading).toBeFalsy();
                 done();
@@ -61,16 +61,16 @@ describe('LocalTreeTests', function () {
     });
 
     it('testDownloadingMultiple', function (done) {
-      c.localTree.setDownloading('/testfile', false, function (err) {
+      c.localTree.setDownloading(c.testContext, '/testfile', false, function (err) {
         expect(err).toBeFalsy();
-        c.localTree.isDownloading('/testfile', function (err, isDownloading) {
+        c.localTree.isDownloading(c.testContext, '/testfile', function (err, isDownloading) {
           expect(err).toBeFalsy();
           expect(isDownloading).toBeFalsy();
-          c.localTree.setDownloading('/testfile', true, function (err) {
+          c.localTree.setDownloading(c.testContext, '/testfile', true, function (err) {
             expect(err).toBeFalsy();
-            c.localTree.setDownloading('/testfile', true, function (err) {
+            c.localTree.setDownloading(c.testContext, '/testfile', true, function (err) {
               expect(err).toBeFalsy();
-              c.localTree.isDownloading('/testfile', function (err, isDownloading) {
+              c.localTree.isDownloading(c.testContext, '/testfile', function (err, isDownloading) {
                 expect(err).toBeFalsy();
                 expect(isDownloading).toBeTruthy();
                 done();
@@ -83,21 +83,21 @@ describe('LocalTreeTests', function () {
 
     it('testWaitDownload', function (done) {
       var waited = false;
-      c.localTree.setDownloading('/testfile', true, function (err) {
+      c.localTree.setDownloading(c.testContext, '/testfile', true, function (err) {
         expect(err).toBeFalsy();
-        c.localTree.waitOnDownload('/testfile', function (err) {
+        c.localTree.waitOnDownload(c.testContext, '/testfile', function (err) {
           expect(err).toBeFalsy();
           expect(waited).toBeTruthy();
 
           // it shouldn't wait a second time
-          c.localTree.waitOnDownload('/testfile', function (err) {
+          c.localTree.waitOnDownload(c.testContext, '/testfile', function (err) {
             expect(err).toBeFalsy();
             done();
           });
         });
 
         setTimeout(function () {
-          c.localTree.setDownloading('/testfile', false, function (err) {
+          c.localTree.setDownloading(c.testContext, '/testfile', false, function (err) {
             expect(err).toBeFalsy();
             waited = true;
           });
@@ -106,7 +106,7 @@ describe('LocalTreeTests', function () {
     });
 
     it('testWaitDownloadNotDownloading', function (done) {
-      c.localTree.waitOnDownload('/testfile', function (err) {
+      c.localTree.waitOnDownload(c.testContext, '/testfile', function (err) {
         expect(err).toBeFalsy();
         done();
       });
@@ -115,7 +115,7 @@ describe('LocalTreeTests', function () {
     it('testDownload', function (done) {
       c.addFile(c.remoteTree, '/test', function () {
         c.expectLocalFileExist('/test', false, false, function () {
-          c.localTree.download(c.remoteTree, '/test', function (err, file) {
+          c.localTree.download(c.testContext, c.remoteTree, '/test', function (err, file) {
             expect(err).toBeFalsy();
             expect(file).toBeTruthy();
             c.expectLocalFileExistExt('/test', true, true, false, done);
@@ -137,7 +137,7 @@ describe('LocalTreeTests', function () {
           expect(local.getDownloadedRemoteModifiedDate()).toBeFalsy();
           expect(local.isCreatedLocally()).toBeTruthy();
           setTimeout(function () {
-            c.localTree.refreshCacheInfo('/test', remote, function (err) {
+            c.localTree.refreshCacheInfo(c.testContext, '/test', remote, function (err) {
               expect(err).toBeFalsy();
               c.localTree.open('/test', function (err, local) {
                 expect(err).toBeFalsy();
@@ -156,7 +156,7 @@ describe('LocalTreeTests', function () {
     it('testRefreshCacheInfoAfterUpdate', function (done) {
       // verify that if a remote file is updated to a local version, the local modified date is still used
       c.addFile(c.remoteTree, '/test', function (remote) {
-        c.localTree.download(c.remoteTree, '/test', function (err, local) {
+        c.localTree.download(c.testContext, c.remoteTree, '/test', function (err, local) {
           expect(err).toBeFalsy();
           local.setLastModified(local.lastModified() + 10);
           var localModified = local.lastModified();
@@ -165,7 +165,7 @@ describe('LocalTreeTests', function () {
             remote.setLastModified(local.lastModified() + 10);
             remote.close(function (err) {
               expect(err).toBeFalsy();
-              c.localTree.refreshCacheInfo('/test', remote, function (err) {
+              c.localTree.refreshCacheInfo(c.testContext, '/test', remote, function (err) {
                 expect(err).toBeFalsy();
                 c.localTree.open('/test', function (err, local) {
                   expect(err).toBeFalsy();
@@ -182,7 +182,7 @@ describe('LocalTreeTests', function () {
     it('testRefreshCacheInfoNoExist', function (done) {
       c.addFile(c.remoteTree, '/test', function (remote) {
         c.addFile(c.localRawTree, '/test', function () {
-          c.localTree.refreshCacheInfo('/test', remote, function (err) {
+          c.localTree.refreshCacheInfo(c.testContext, '/test', remote, function (err) {
             expect(err).toBeFalsy();
             c.expectLocalFileExist('/test', true, false, done);
           });
@@ -708,7 +708,6 @@ describe('LocalTreeTests', function () {
         c.addQueuedFile('/testfile', function () {
           c.testTree.rename('/.temp', '/testfile', function (err) {
             expect(err).toBeFalsy();
-            c.fs.printAll();
             c.expectLocalFileExist('/.temp', false, false, function () {
               c.expectLocalFileExist('/testfile', true, true, function () {
                 c.expectQueuedMethod('/', '.temp', false, function () {

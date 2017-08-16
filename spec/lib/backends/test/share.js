@@ -41,7 +41,7 @@ TestShare.prototype.buildResourceUrl = function (path) {
     return 'http://localhost:4502' + path;
 };
 
-TestShare.prototype.fetchResource = function (path, cb) {
+TestShare.prototype.fetchResource = function (context, path, cb) {
   var self = this;
 
   var fetchFile = function () {
@@ -69,7 +69,7 @@ TestShare.prototype.fetchResource = function (path, cb) {
   }
 };
 
-TestShare.prototype.applyRequestDefaults = function (options) {
+TestShare.prototype.applyRequestDefaults = function (context, options) {
     return options;
 };
 

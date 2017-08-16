@@ -84,6 +84,7 @@ function RQCommon(config) {
     });
   self.localTree = self.testTree.local;
   self.localRawTree = self.testTree.local.source;
+  self.testContext = self.testTree.createContext().withLabel('TestContext');
 
   function _pathFromUrl(url) {
     var path = url.substr(self.urlPrefix.length);
@@ -274,11 +275,11 @@ RQCommon.prototype.expectLocalFileExistExt = function (fileName, localExists, wo
   self.localTree.exists(fileName, function (err, exists) {
     expect(err).toBeFalsy();
     expect(exists).toEqual(localExists);
-    self.localTree.cacheInfoExists(fileName, function (err, exists) {
+    self.localTree.cacheInfoExists(self.testContext, fileName, function (err, exists) {
       expect(err).toBeFalsy();
       expect(exists).toEqual(workExists);
       if (exists) {
-        self.localTree.isCreatedLocally(fileName, function (err, exists) {
+        self.localTree.isCreatedLocally(self.testContext, fileName, function (err, exists) {
           expect(err).toBeFalsy();
           expect(exists).toEqual(createExists);
           cb();
@@ -317,7 +318,7 @@ RQCommon.prototype.expectFileModifiedDate = function (path, modifiedTime, toEqua
 };
 
 RQCommon.prototype.expectQueuedMethod = function (path, name, method, cb) {
-  this.testTree.rq.getRequests(path, function (err, lookup) {
+  this.testTree.rq.getRequests(this.testContext, path, function (err, lookup) {
     expect(err).toBeFalsy();
     if (method) {
       expect(lookup[name]).toEqual(method);
