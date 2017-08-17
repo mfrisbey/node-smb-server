@@ -38,71 +38,39 @@ describe('LocalTreeTests', function () {
   });
 
   describe('Downloading', function () {
-    it('testIsDownloading', function (done) {
-      c.localTree.isDownloading(c.testContext, '/testfile', function (err, isDownloading) {
-        expect(err).toBeFalsy();
-        expect(isDownloading).toBeFalsy();
-        c.localTree.setDownloading(c.testContext, '/testfile', true, function (err) {
-          expect(err).toBeFalsy();
-          c.localTree.isDownloading(c.testContext, '/testfile', function (err, isDownloading) {
-            expect(err).toBeFalsy();
-            expect(isDownloading).toBeTruthy();
-            c.localTree.setDownloading(c.testContext, '/testfile', false, function (err) {
-              expect(err).toBeFalsy();
-              c.localTree.isDownloading(c.testContext, '/testfile', function (err, isDownloading) {
-                expect(err).toBeFalsy();
-                expect(isDownloading).toBeFalsy();
-                done();
-              });
-            });
-          });
-        });
-      });
+    it('testIsDownloading', function () {
+      expect(c.localTree.isDownloading(c.testContext, '/testfile')).toBeFalsy();
+      c.localTree.setDownloading(c.testContext, '/testfile', true);
+      expect(c.localTree.isDownloading(c.testContext, '/testfile')).toBeTruthy();
+      c.localTree.setDownloading(c.testContext, '/testfile', false);
+      expect(c.localTree.isDownloading(c.testContext, '/testfile')).toBeFalsy();
     });
 
-    it('testDownloadingMultiple', function (done) {
-      c.localTree.setDownloading(c.testContext, '/testfile', false, function (err) {
-        expect(err).toBeFalsy();
-        c.localTree.isDownloading(c.testContext, '/testfile', function (err, isDownloading) {
-          expect(err).toBeFalsy();
-          expect(isDownloading).toBeFalsy();
-          c.localTree.setDownloading(c.testContext, '/testfile', true, function (err) {
-            expect(err).toBeFalsy();
-            c.localTree.setDownloading(c.testContext, '/testfile', true, function (err) {
-              expect(err).toBeFalsy();
-              c.localTree.isDownloading(c.testContext, '/testfile', function (err, isDownloading) {
-                expect(err).toBeFalsy();
-                expect(isDownloading).toBeTruthy();
-                done();
-              });
-            });
-          });
-        });
-      });
+    it('testDownloadingMultiple', function () {
+      c.localTree.setDownloading(c.testContext, '/testfile', false);
+      expect(c.localTree.isDownloading(c.testContext, '/testfile')).toBeFalsy();
+      c.localTree.setDownloading(c.testContext, '/testfile', true);
+      expect(c.localTree.isDownloading(c.testContext, '/testfile')).toBeTruthy();
     });
 
     it('testWaitDownload', function (done) {
       var waited = false;
-      c.localTree.setDownloading(c.testContext, '/testfile', true, function (err) {
+      c.localTree.setDownloading(c.testContext, '/testfile', true);
+      c.localTree.waitOnDownload(c.testContext, '/testfile', function (err) {
         expect(err).toBeFalsy();
+        expect(waited).toBeTruthy();
+
+        // it shouldn't wait a second time
         c.localTree.waitOnDownload(c.testContext, '/testfile', function (err) {
           expect(err).toBeFalsy();
-          expect(waited).toBeTruthy();
-
-          // it shouldn't wait a second time
-          c.localTree.waitOnDownload(c.testContext, '/testfile', function (err) {
-            expect(err).toBeFalsy();
-            done();
-          });
+          done();
         });
-
-        setTimeout(function () {
-          c.localTree.setDownloading(c.testContext, '/testfile', false, function (err) {
-            expect(err).toBeFalsy();
-            waited = true;
-          });
-        }, 500);
       });
+
+      setTimeout(function () {
+        waited = true;
+        c.localTree.setDownloading(c.testContext, '/testfile', false);
+      }, 500);
     });
 
     it('testWaitDownloadNotDownloading', function (done) {
