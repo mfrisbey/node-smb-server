@@ -33,6 +33,23 @@
       "filename": "./smb.log"
     }
   },
+  "smbcmd": {
+    "console": {
+      "level": "warn",
+      "colorize": true,
+      "label": "SMB"
+    },
+    "file": {
+      "level": "debug",
+      "timestamp": true,
+      "json": false,
+      "maxsize": 5242880,
+      "maxFiles": 10,
+      "zippedArchive": true,
+      "tailable": true,
+      "filename": "./smb-cmd.log"
+    }
+  },
   "spi": {
     "console": {
       "level": "info",
