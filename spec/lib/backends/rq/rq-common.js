@@ -29,31 +29,8 @@ function RQCommon(config) {
 
   config = config || {};
 
-  self.localPrefix = "/local/path";
-
-  var remoteShare = new FSShare('remote', {
-    "backend": "remotefs",
-    "description": "test remote share",
-    "path": "/remote/path"
-  });
-  var localShare = new FSShare('local', {
-    "backend": "localfs",
-    "description": "test local share",
-    "path": self.localPrefix
-  });
-  var tempShare = new FSShare('temp', {
-    "backend": "tempfs",
-    "description": "test temp share",
-    "path": "/temp/path"
-  });
-
   var host = 'testlocalhost';
   var port = 4502;
-  self.hostPrefix = 'http://' + host + ':' + port;
-  self.urlPrefix = self.hostPrefix + '/api/assets';
-  self.remoteTree = new TestTree(remoteShare, self.urlPrefix, self.request);
-  self.tempFilesTree = new TestTree(tempShare);
-
   self.config = {
     backend: 'rqtest',
     modifiedThreshold: 100,
@@ -71,19 +48,38 @@ function RQCommon(config) {
     ],
     host: host,
     port: port,
-    cacheInfoOnly: config.cacheInfoOnly ? true : false
+    cacheInfoOnly: config.cacheInfoOnly ? true : false,
+    noprocessor: true
   };
+  self.localPrefix = "/local/path";
+
+  var remoteShare = new TestShare('remote', self.config);
+  var localShare = new FSShare('local', {
+    "backend": "localfs",
+    "description": "test local share",
+    "path": self.localPrefix
+  });
+  var tempShare = new FSShare('temp', {
+    "backend": "tempfs",
+    "description": "test temp share",
+    "path": "/temp/path"
+  });
+
+  self.hostPrefix = 'http://' + host + ':' + port;
+  self.urlPrefix = self.hostPrefix + '/api/assets';
+  self.remoteTree = new TestTree(remoteShare, self.urlPrefix, self.request);
+  remoteShare.setTree(self.remoteTree);
+  self.tempFilesTree = new TestTree(tempShare);
+
   self.testShare = new RQShare(
     'rq',
-    self.config);
-  self.testTree = new RQTree(
-    self.testShare,
-    self.remoteTree,
-    {
-      noprocessor: true
-    });
+    self.config,
+    remoteShare);
+  self.testContext = self.testShare.createContext().withLabel('TestContext');
+  self.testTree = self.testShare.createTree(self.testContext);
   self.localTree = self.testTree.local;
   self.localRawTree = self.testTree.local.source;
+  self.testRq = self.testShare.rq;
 
   function _pathFromUrl(url) {
     var path = url.substr(self.urlPrefix.length);
@@ -98,7 +94,6 @@ function RQCommon(config) {
         expect(err).toBeFalsy();
         file.close(function (err) {
           expect(err).toBeFalsy();
-          console.log(url, data);
           cb();
         });
       });
@@ -317,7 +312,7 @@ RQCommon.prototype.expectFileModifiedDate = function (path, modifiedTime, toEqua
 };
 
 RQCommon.prototype.expectQueuedMethod = function (path, name, method, cb) {
-  this.testTree.rq.getRequests(path, function (err, lookup) {
+  this.testTree.rq.getRequests(this.testContext, path, function (err, lookup) {
     expect(err).toBeFalsy();
     if (method) {
       expect(lookup[name]).toEqual(method);

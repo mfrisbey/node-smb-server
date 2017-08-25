@@ -15,15 +15,15 @@ var util = require('util');
 var FSTree = require('../../../../lib/backends/fs/tree');
 var utils = require('../../../../lib/utils');
 
-var TestTree = function (share, urlPrefix, request) {
+var TestTree = function (share, urlPrefix, request, context) {
   if (!(this instanceof TestTree)) {
-    return new TestTree(share);
+    return new TestTree(share, urlPrefix, request, context);
   }
 
   this.urlPrefix = urlPrefix;
   this.request = request;
 
-  FSTree.call(this, share);
+  FSTree.call(this, share, context);
 };
 
 util.inherits(TestTree, FSTree);

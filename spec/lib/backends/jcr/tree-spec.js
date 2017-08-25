@@ -11,10 +11,11 @@
  */
 
 var JCRTree = require('../../../../lib/backends/jcr/tree');
+var JCRShare = require('../../../../lib/backends/jcr/share');
 
 describe('JCRTree', function () {
   it('testIsTempFile', function () {
-    var tree = new JCRTree({config:{}}, {}, {});
+    var tree = new JCRTree(new JCRShare('test', {}), {}, {});
     expect(tree.isTempFileName('/')).toBeFalsy();
     expect(tree.isTempFileName('/somefile.tmp')).toBeTruthy();
     expect(tree.isTempFileName('/somefile.TMP')).toBeTruthy();

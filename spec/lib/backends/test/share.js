@@ -10,67 +10,26 @@
  *  governing permissions and limitations under the License.
  */
 
-var Share = require('../../../../lib/spi/share');
+var util = require('util');
 
-var TestShare = function (name, config, tree) {
-    if (!(this instanceof TestShare)) {
-        return new TestShare();
-    }
+var RQRemoteShare = require('../../../../lib/backends/rq/remoteshare');
 
-    this.isConnected = false;
-    this.tree = tree;
-    this.fetchCb = function (path, cb) { cb(); };
-
-    Share.call(this, name, config);
-};
-
-TestShare.prototype.setFetchCb = function (cb) {
-  this.fetchCb = cb;
-};
-
-TestShare.prototype.connect = function (session, shareLevelPassword, cb) {
-    if (this.isConnected) {
-        cb('test tree is already connected');
-    } else {
-        this.isConnected = true;
-        cb(null, this.tree);
-    }
-};
-
-TestShare.prototype.buildResourceUrl = function (path) {
-    return 'http://localhost:4502' + path;
-};
-
-TestShare.prototype.fetchResource = function (path, cb) {
-  var self = this;
-
-  var fetchFile = function () {
-    self.tree.open(path, function (err, file) {
-      if (err) {
-        cb(err);
-      } else {
-        self.fetchCb(file, function () {
-          cb(null, path);
-        });
-      }
-    });
-  };
-
-  if (!self.tree) {
-    cb('attempting to fetch resource but no tree is defined');
-  } else {
-    if (!self.isConnected) {
-      self.connect({}, {}, function (err, tree) {
-        fetchFile();
-      });
-    } else {
-      fetchFile();
-    }
+var TestShare = function (name, config) {
+  if (!(this instanceof TestShare)) {
+    return new TestShare(name, config);
   }
+
+  RQRemoteShare.call(this, name, config);
 };
 
-TestShare.prototype.applyRequestDefaults = function (options) {
-    return options;
+util.inherits(TestShare, RQRemoteShare);
+
+TestShare.prototype.setTree = function (tree) {
+  this.tree = tree;
+};
+
+TestShare.prototype.createTree = function (context) {
+  return this.tree;
 };
 
 module.exports = TestShare;

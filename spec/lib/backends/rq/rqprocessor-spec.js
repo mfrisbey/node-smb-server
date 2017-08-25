@@ -22,7 +22,7 @@ describe('RQProcessor', function () {
   beforeEach(function () {
     c = new RQCommon();
 
-    processor = new RQProcessor(c.testTree);
+    processor = new RQProcessor(c.testShare);
 
     config = {
       expiration: 0,
@@ -41,7 +41,7 @@ describe('RQProcessor', function () {
         c.setPipeDelay(function (delayCb) {
           if (!delayed) {
             delayed = true;
-            c.testTree.rq.queueRequest({
+            c.testRq.queueRequest(c.testContext, {
               method: 'POST',
               path: '/testfile',
               localPrefix: c.localPrefix,
@@ -64,7 +64,7 @@ describe('RQProcessor', function () {
 
     it('testItemUpdatedNotUploading', function (done) {
       c.addQueuedFile('/testfile', function () {
-        c.testTree.rq.queueRequest({
+        c.testTree.rq.queueRequest(c.testContext, {
           method: 'POST',
           path: '/testfile',
           localPrefix: c.localPrefix,
@@ -82,7 +82,7 @@ describe('RQProcessor', function () {
     var testPathUpdated = function (path, removePath, done) {
       c.addQueuedFile(path, function () {
         c.setPipeDelay(function (pipeCb) {
-          c.testTree.rq.removePath(removePath, function (err) {
+          c.testTree.rq.removePath(c.testContext, removePath, function (err) {
             pipeCb();
           });
         });
@@ -110,7 +110,7 @@ describe('RQProcessor', function () {
 
   describe('Sync', function () {
     var testDotFile = function (path, name, done) {
-      c.testTree.rq.getProcessRequest = function (expiration, maxRetries, cb) {
+      c.testTree.rq.getProcessRequest = function (context, expiration, maxRetries, cb) {
         cb(null, {
           path: path,
           name: name,
@@ -119,8 +119,8 @@ describe('RQProcessor', function () {
           localPrefix: c.localPrefix
         });
       };
-      c.testTree.rq.completeRequest = function (path, name, cb) {
-        c.testTree.rq.getProcessRequest = function (expiration, maxRetries, getCb) {
+      c.testTree.rq.completeRequest = function (context, path, name, cb) {
+        c.testTree.rq.getProcessRequest = function (context, expiration, maxRetries, getCb) {
           getCb();
         };
         cb();
@@ -212,7 +212,7 @@ describe('RQProcessor', function () {
           expect(err).toBeFalsy();
           c.expectQueuedMethod('/', 'testfile', 'PUT', function () {
             expect(processor.emit).toHaveBeenCalledWith('syncerr', {path: '/testfile', file: Path.join(c.localPrefix, '/testfile'), method: 'POST', err: jasmine.any(String)});
-            c.testTree.rq.queueRequest({
+            c.testTree.rq.queueRequest(c.testContext, {
               method: 'DELETE',
               path: '/testfile',
               localPrefix: c.localPrefix,
@@ -331,7 +331,7 @@ describe('RQProcessor', function () {
         c.addCachedFile('/testdelete', function () {
           c.testTree.delete('/testdelete', function (err) {
             expect(err).toBeFalsy();
-            c.testTree.rq.incrementRetryCount('/', 'testdelete', 400, function (err) {
+            c.testRq.incrementRetryCount(c.testContext, '/', 'testdelete', 400, function (err) {
               expect(err).toBeFalsy();
               processor.start(config);
               setTimeout(function () {

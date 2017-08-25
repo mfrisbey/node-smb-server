@@ -688,11 +688,4 @@ describe('LocalTreeTests', function () {
       });
     });
   });
-
-  it('testDisconnect', function (done) {
-    c.localTree.disconnect(function (err) {
-      expect(err).toBeFalsy();
-      done();
-    });
-  });
 });
