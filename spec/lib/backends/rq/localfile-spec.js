@@ -13,6 +13,7 @@
 var RQCommon = require('./rq-common');
 
 var RQLocalFile = RQCommon.require(__dirname, '../../../../lib/backends/rq/localfile');
+var RQLocalFileConnection = RQCommon.require(__dirname, '../../../../lib/backends/rq/localfileconnection');
 
 describe('LocalFileTest', function () {
   var c;
@@ -69,7 +70,7 @@ describe('LocalFileTest', function () {
 
     it('testCreateInstance', function (done) {
       _createInfoFile(_getCacheInfo(54321, 54321, true), function (file, infoFile) {
-        RQLocalFile.createInstance(file, infoFile, c.localTree, function (err, local) {
+        RQLocalFileConnection.createFileInstance(file, infoFile, c.localTree, function (err, local) {
           expect(err).toBeFalsy();
           expect(local).toBeTruthy();
           expect(local.isCreatedLocally()).toBeTruthy();
@@ -80,7 +81,7 @@ describe('LocalFileTest', function () {
 
     it('testCreateInstanceBadInfo', function (done) {
       _createInfoFile('', function (file, infoFile) {
-        RQLocalFile.createInstance(file, infoFile, c.localTree, function (err, local) {
+        RQLocalFileConnection.createFileInstance(file, infoFile, c.localTree, function (err, local) {
           expect(err).toBeFalsy();
           expect(local).toBeTruthy();
           expect(local.isCreatedLocally()).toBeFalsy();
@@ -91,7 +92,7 @@ describe('LocalFileTest', function () {
 
     it('testCreateInstanceNoInfo', function (done) {
       c.addFile(c.localRawTree, '/test', function (file) {
-        RQLocalFile.createInstance(file, null, c.localTree, function (err, local) {
+        RQLocalFileConnection.createFileInstance(file, null, c.localTree, function (err, local) {
           expect(err).toBeFalsy();
           expect(local).toBeTruthy();
           expect(local.isCreatedLocally()).toBeFalsy();
@@ -101,10 +102,14 @@ describe('LocalFileTest', function () {
     });
   });
 
+  function _createRQLocalFile(source, cacheInfo) {
+    return new RQLocalFile(new RQLocalFileConnection(c.localTree, source.getFileConnection(), cacheInfo), source, c.localTree);
+  }
+
   it('testAccessors', function (done) {
     c.addFile(c.remoteTree, '/test', function (remote) {
       c.addFile(c.localRawTree, '/test', function (source) {
-        var file = new RQLocalFile(source, RQLocalFile.getCacheInfo(source, remote, true), c.localTree);
+        var file = _createRQLocalFile(source, RQLocalFile.getCacheInfo(source, remote, true));
 
         expect(file.isCreatedLocally()).toBeTruthy();
         expect(file.getDownloadedRemoteModifiedDate()).toEqual(remote.lastModified());
@@ -115,7 +120,7 @@ describe('LocalFileTest', function () {
         expect(file.size()).toEqual(source.size());
         expect(file.allocationSize()).toEqual(source.allocationSize());
 
-        file = new RQLocalFile(file, null, c.localTree);
+        file = _createRQLocalFile(file, null);
 
         expect(file.isCreatedLocally()).toBeFalsy();
         expect(file.getDownloadedRemoteModifiedDate()).toEqual(0);
@@ -129,7 +134,7 @@ describe('LocalFileTest', function () {
   describe('CanDeleteTest', function () {
     it('testCanDelete', function (done) {
       c.addFile(c.localRawTree, '/test', function (file) {
-        var file = new RQLocalFile(file, _getCacheInfo(file.lastModified(), 1234, false), c.localTree);
+        var file = _createRQLocalFile(file, _getCacheInfo(file.lastModified(), 1234, false));
 
         file.canDelete(function (err, canDelete) {
           expect(err).toBeFalsy();
@@ -141,7 +146,7 @@ describe('LocalFileTest', function () {
 
     it('testCanDeleteModified', function (done) {
       c.addFile(c.localRawTree, '/test', function (file) {
-        var file = new RQLocalFile(file, _getCacheInfo(12345, 1234, false), c.localTree);
+        var file = _createRQLocalFile(file, _getCacheInfo(12345, 1234, false));
 
         file.canDelete(function (err, canDelete) {
           expect(err).toBeFalsy();
@@ -153,7 +158,7 @@ describe('LocalFileTest', function () {
 
     it('testCanDeleteCreated', function (done) {
       c.addFile(c.localRawTree, '/test', function (file) {
-        var file = new RQLocalFile(file, _getCacheInfo(file.lastModified(), 1234, true), c.localTree);
+        var file = _createRQLocalFile(file, _getCacheInfo(file.lastModified(), 1234, true));
 
         file.canDelete(function (err, canDelete) {
           expect(err).toBeFalsy();
@@ -165,7 +170,7 @@ describe('LocalFileTest', function () {
 
     it('testCanDeleteDirectory', function (done) {
       c.addDirectory(c.localRawTree, '/test', function (dir) {
-        var file = new RQLocalFile(dir, null, c.localTree);
+        var file = _createRQLocalFile(dir, null);
 
         file.canDelete(function (err, canDelete) {
           expect(err).toBeFalsy();
@@ -177,7 +182,7 @@ describe('LocalFileTest', function () {
 
     it('testCanDeleteTempFile', function (done) {
       c.addFile(c.localRawTree, '/.test', function (file) {
-        var file = new RQLocalFile(file, null, c.localTree);
+        var file = _createRQLocalFile(file, null);
 
         file.canDelete(function (err, canDelete) {
           expect(err).toBeFalsy();
@@ -189,7 +194,7 @@ describe('LocalFileTest', function () {
 
     it('testCanDeleteDangling', function (done) {
       c.addFile(c.localRawTree, '/test', function (file) {
-        var file = new RQLocalFile(file, _getCacheInfo(file.lastModified(), 0, false), c.localTree);
+        var file = _createRQLocalFile(file, _getCacheInfo(file.lastModified(), 0, false));
 
         file.canDelete(function (err, canDelete) {
           expect(err).toBeFalsy();
@@ -203,10 +208,10 @@ describe('LocalFileTest', function () {
   describe('TimeTests', function () {
     it('testDatesRemote', function (done) {
       c.addFile(c.localRawTree, '/test', function (local) {
-        var file = new RQLocalFile(local, _getCacheInfoExt(
+        var file = _createRQLocalFile(local, _getCacheInfoExt(
           local.lastModified(), 12345, 12346,
           false, false
-        ), c.localTree);
+        ));
         expect(file.lastModified()).toEqual(12345);
         expect(file.lastChanged()).toEqual(file.lastModified());
         expect(file.created()).toEqual(12346);
@@ -222,10 +227,10 @@ describe('LocalFileTest', function () {
 
     it('testDatesCreated', function (done) {
       c.addFile(c.localRawTree, '/test', function (local) {
-        var file = new RQLocalFile(local, _getCacheInfoExt(
+        var file = _createRQLocalFile(local, _getCacheInfoExt(
           local.lastModified(), 0, 0,
           true, false
-        ), c.localTree);
+        ));
         expect(file.lastModified()).toEqual(local.lastModified());
         expect(file.lastChanged()).toEqual(local.lastChanged());
         expect(file.created()).toEqual(local.created());
@@ -241,10 +246,10 @@ describe('LocalFileTest', function () {
 
     it('testDatesDangling', function (done) {
       c.addFile(c.localRawTree, '/test', function (local) {
-        var file = new RQLocalFile(local, _getCacheInfoExt(
+        var file = _createRQLocalFile(local, _getCacheInfoExt(
           local.lastModified(), 0, 0,
           false, false
-        ), c.localTree);
+        ));
         expect(file.lastModified()).toEqual(local.lastModified());
         expect(file.lastChanged()).toEqual(local.lastChanged());
         expect(file.created()).toEqual(local.created());
@@ -261,7 +266,7 @@ describe('LocalFileTest', function () {
 
   it('testReadWrite', function (done) {
     c.addFile(c.localRawTree, '/test', function (local) {
-      var file = new RQLocalFile(local, _getCacheInfo(local.lastModified(), 12345, false), c.localTree);
+      var file = _createRQLocalFile(local, _getCacheInfo(local.lastModified(), 12345, false));
       file.setLength(5, function (err) {
         expect(err).toBeFalsy();
         file.write('hello', 0, function (err) {

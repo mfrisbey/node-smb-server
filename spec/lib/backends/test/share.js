@@ -10,7 +10,10 @@
  *  governing permissions and limitations under the License.
  */
 
+var util = require('util');
+
 var Share = require('../../../../lib/spi/share');
+var SMBContext = require('../../../../lib/smbcontext');
 
 var TestShare = function (name, config, tree) {
     if (!(this instanceof TestShare)) {
@@ -23,6 +26,8 @@ var TestShare = function (name, config, tree) {
 
     Share.call(this, name, config);
 };
+
+util.inherits(TestShare, Share);
 
 TestShare.prototype.setFetchCb = function (cb) {
   this.fetchCb = cb;
@@ -45,7 +50,8 @@ TestShare.prototype.fetchResource = function (path, cb) {
   var self = this;
 
   var fetchFile = function () {
-    self.tree.open(path, function (err, file) {
+    var tree = self.tree.createTree(new SMBContext().withLabel('TestFetchResource'));
+    tree.open(path, function (err, file) {
       if (err) {
         cb(err);
       } else {

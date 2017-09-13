@@ -15,15 +15,14 @@ var util = require('util');
 var FSTree = require('../../../../lib/backends/fs/tree');
 var utils = require('../../../../lib/utils');
 
-var TestTree = function (share, urlPrefix, request) {
+var TestTree = function (treeConnection, context) {
   if (!(this instanceof TestTree)) {
-    return new TestTree(share);
+    return new TestTree(treeConnection, context);
   }
 
-  this.urlPrefix = urlPrefix;
-  this.request = request;
+  FSTree.call(this, treeConnection, context);
 
-  FSTree.call(this, share);
+  this.urlPrefix = treeConnection.urlPrefix;
 };
 
 util.inherits(TestTree, FSTree);
@@ -44,9 +43,10 @@ TestTree.prototype.isTempFileNameForce = function (name) {
 
 TestTree.prototype.registerFileUrl = function (path) {
   var self = this;
-  if (this.request) {
+  var request = this.treeConnection.request;
+  if (request) {
     var targetUrl = encodeURI(this.urlPrefix + path);
-    this.request.registerUrl(targetUrl, function (callback) {
+    request.registerUrl(targetUrl, function (callback) {
       self.open(path, function (err, file) {
         if (err) {
           callback(err);

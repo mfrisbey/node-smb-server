@@ -13,15 +13,15 @@
 var util = require('util');
 var File = require('../../../../lib/spi/file');
 
-var TestFile = function (filePath, tree, data) {
+var TestFile = function (fileConnection, tree, data) {
     if (!(this instanceof TestFile)) {
-        return new TestFile();
+        return new TestFile(fileConnection, tree, data);
     }
+
+    File.call(this, fileConnection, tree);
 
     this.data = data;
     this.dirty = false;
-
-    File.call(this, filePath, tree);
 };
 
 util.inherits(TestFile, File);

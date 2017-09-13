@@ -12,6 +12,7 @@
 
 var RQCommon = require('./rq-common');
 var RQFile = RQCommon.require(__dirname, '../../../../lib/backends/rq/file');
+var RQFileConnection = RQCommon.require(__dirname, '../../../../lib/backends/rq/fileconnection');
 
 describe('RQFile', function () {
 
@@ -24,10 +25,10 @@ describe('RQFile', function () {
   describe('CreateInstance', function () {
     it('testCreateInstanceRemote', function (done) {
       c.addFile(c.remoteTree, '/testfile', function (file) {
-        RQFile.createInstance(file, c.testTree, function (err, newInstance) {
+        RQFileConnection.createFileInstance(file, c.testTree, function (err, newInstance) {
           expect(err).toBeFalsy();
           expect(newInstance).toBeDefined();
-          expect((newInstance instanceof RQFile)).toBeTruthy();
+          expect(RQCommon.isRQFile(newInstance)).toBeTruthy();
           done();
         });
       });
@@ -35,10 +36,10 @@ describe('RQFile', function () {
 
     it('testCreateInstanceLocal', function (done) {
       c.addFile(c.localTree, '/testfile', function (file) {
-        RQFile.createInstance(file, c.testTree, function (err, localFile) {
+        RQFileConnection.createFileInstance(file, c.testTree, function (err, localFile) {
           expect(err).toBeFalsy();
           expect(localFile).toBeDefined();
-          expect((localFile instanceof RQFile)).toBeTruthy();
+          expect(RQCommon.isRQFile(localFile)).toBeTruthy();
           done();
         });
       });

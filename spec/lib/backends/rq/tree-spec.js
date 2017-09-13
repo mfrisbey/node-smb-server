@@ -440,6 +440,7 @@ describe('RQTree', function () {
             expect(err).toBeFalsy();
             c.expectLocalFileExist(localFileName, true, false, function () {
               c.testTree.delete(localFileName, function (err) {
+                expect(err).toBeFalsy();
                 c.testTree.list('/*', function (err, files) {
                   expect(err).toBeFalsy();
                   expect(files.length).toEqual(0);
@@ -1545,6 +1546,7 @@ describe('RQTree', function () {
       });
     });
 
+    // FLAKY. This is a flaky test. sometimes the expectLocalFileExist call fails
     it('testRenameDirectory', function (done) {
       c.localRawTree.createDirectory('/test', function (err) {
         expect(err).toBeFalsy();
