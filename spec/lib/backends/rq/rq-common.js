@@ -101,7 +101,6 @@ function RQCommon(config) {
         expect(err).toBeFalsy();
         file.close(function (err) {
           expect(err).toBeFalsy();
-          console.log(url, data);
           cb();
         });
       });
@@ -329,7 +328,7 @@ RQCommon.prototype.expectFileModifiedDate = function (path, modifiedTime, toEqua
 };
 
 RQCommon.prototype.expectQueuedMethod = function (path, name, method, cb) {
-  this.testTree.rq.getRequests(path, function (err, lookup) {
+  this.testTree.rq.getRequests(this.testTree, path, function (err, lookup) {
     expect(err).toBeFalsy();
     if (method) {
       expect(lookup[name]).toEqual(method);

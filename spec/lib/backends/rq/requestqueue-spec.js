@@ -10,7 +10,7 @@
  *  governing permissions and limitations under the License.
  */
 
-var testcommon = require('../../test-common');
+var testcommon = require('./rq-common');
 var requestqueue = testcommon.require(__dirname, '../../../../lib/backends/rq/requestqueue');
 var Path = require('path');
 
@@ -51,7 +51,7 @@ describe('RequestQueue', function () {
   };
 
   var queueAndVerifyOptions = function (options, callback) {
-    rq.queueRequest(options, function (err) {
+    rq.queueRequest(common.testTree, options, function (err) {
       expect(err).toBeFalsy();
       common.db.find({}, function (e, results) {
         expect(e).toBeFalsy();
@@ -127,7 +127,7 @@ describe('RequestQueue', function () {
         if (rq.emit.calls[i].args) {
           if (rq.emit.calls[i].args.length == 2) {
             if (rq.emit.calls[i].args[0] == eventName &&
-              rq.emit.calls[i].args[1] == eventValue) {
+              rq.emit.calls[i].args[1].path == eventValue) {
               verified = true;
               break;
             }
@@ -173,7 +173,7 @@ describe('RequestQueue', function () {
       addRequest('PUT');
       addDestRequest('POST');
 
-      rq.getRequests(path, function (err, lookup) {
+      rq.getRequests(common.testTree, path, function (err, lookup) {
         expect(err).toBeUndefined();
         expect(common.db.find).toHaveBeenCalled();
 
@@ -192,7 +192,7 @@ describe('RequestQueue', function () {
         callback('error!');
       };
 
-      rq.getRequests(testPath, function (err, lookup) {
+      rq.getRequests(common.testTree, testPath, function (err, lookup) {
         expect(err).toEqual('error!');
         expect(lookup).toBeUndefined();
         done();
@@ -203,14 +203,14 @@ describe('RequestQueue', function () {
   describe('IncrementRetryCount', function () {
     it('testIncrementRetryCount', function (done) {
       addRequest('PUT');
-      rq.getProcessRequest(0, 3, function (err, req) {
+      rq.getProcessRequest(common.testTree, 0, 3, function (err, req) {
         expect(err).toBeFalsy();
         var currRetries = req.retries;
         var currTimestamp = req.timestamp;
-        rq.incrementRetryCount(req.path, req.name, 0, function (err) {
+        rq.incrementRetryCount(common.testTree, req.path, req.name, 0, function (err) {
           expect(err).toBeFalsy();
 
-          rq.getProcessRequest(0, 3, function (err, req) {
+          rq.getProcessRequest(common.testTree, 0, 3, function (err, req) {
             expect(err).toBeFalsy();
             expect(req.retries).toEqual(currRetries + 1);
             expect(req.timestamp).not.toEqual(currTimestamp)
@@ -232,7 +232,7 @@ describe('RequestQueue', function () {
         expect(purged[0] == tempPath || purged[0] == testFullPath).toEqual(true);
         expect(purged[1] == tempPath || purged[1] == testFullPath).toEqual(true);
 
-        rq.getRequests(testPath, function (err, lookup) {
+        rq.getRequests(common.testTree, testPath, function (err, lookup) {
           expect(err).toBeFalsy();
           expect(lookup[testName]).toBeFalsy();
           expect(lookup[testDestName]).toBeFalsy();
@@ -245,7 +245,7 @@ describe('RequestQueue', function () {
   describe('RemoveRequest', function () {
     it('testRemoveRequest', function (done) {
       addRequest('PUT');
-      rq.removeRequest(testPath, testName, function (err) {
+      rq.removeRequest(common.testTree, testPath, testName, function (err) {
         expect(err).toBeFalsy();
         expectEventEmitted('itemupdated', Path.join(testPath, testName));
         expectQueueChangedEmitted();
@@ -254,7 +254,7 @@ describe('RequestQueue', function () {
     });
 
     it('testRemoveRequestError', function (done) {
-      rq.removeRequest(testPath, testName, function (err) {
+      rq.removeRequest(common.testTree, testPath, testName, function (err) {
         expect(err).toBeTruthy();
         expectEventEmitted('itemupdated', Path.join(testPath, testName), true);
         expectQueueChangedEmitted(true);
@@ -266,7 +266,7 @@ describe('RequestQueue', function () {
   describe('GetProcessRequest', function () {
     it('testGetProcessRequest', function (done) {
       addRequest('PUT');
-      rq.getProcessRequest(0, 3, function (err, req) {
+      rq.getProcessRequest(common.testTree, 0, 3, function (err, req) {
         expect(err).toBeFalsy();
         expect(req).toBeDefined();
         expect(req.method).toEqual('PUT');
@@ -276,7 +276,7 @@ describe('RequestQueue', function () {
 
     it('testGetProcessRequestUnexpired', function (done) {
       addRequest('PUT');
-      rq.getProcessRequest(new Date().getTime(), 3, function (err, req) {
+      rq.getProcessRequest(common.testTree, new Date().getTime(), 3, function (err, req) {
         expect(err).toBeFalsy();
         expect(req).toBeFalsy();
         done();
@@ -285,7 +285,7 @@ describe('RequestQueue', function () {
 
     it('testGetProcessRequestMaxRetries', function (done) {
       addRequest('PUT');
-      rq.getProcessRequest(0, 0, function (err, req) {
+      rq.getProcessRequest(common.testTree, 0, 0, function (err, req) {
         expect(err).toBeFalsy();
         expect(req).toBeFalsy();
         done();
@@ -297,9 +297,9 @@ describe('RequestQueue', function () {
     it('testUpdatePath', function (done) {
       addRequest('PUT');
       addRequestOptions('DELETE', testPath, testDestName, testLocalPrefix, testRemotePrefix);
-      rq.updatePath(testPath, testDestPath, function (err) {
+      rq.updatePath(common.testTree, testPath, testDestPath, function (err) {
         expect(err).toBeFalsy();
-        rq.getRequests(testDestPath, function (err, lookup) {
+        rq.getRequests(common.testTree, testDestPath, function (err, lookup) {
           expect(err).toBeFalsy();
           expect(lookup[testName]).toEqual('PUT');
           expect(lookup[testDestName]).toEqual('DELETE');
@@ -312,9 +312,9 @@ describe('RequestQueue', function () {
 
     it('testUpdatePathSub', function (done) {
       addRequestOptions('DELETE', testPath + '/sub', testName, testLocalPrefix, testRemotePrefix);
-      rq.updatePath(testPath, testDestPath, function (err) {
+      rq.updatePath(common.testTree, testPath, testDestPath, function (err) {
         expect(err).toBeFalsy();
-        rq.getRequests(testDestPath + '/sub', function (err, lookup) {
+        rq.getRequests(common.testTree, testDestPath + '/sub', function (err, lookup) {
           expect(err).toBeFalsy();
           expect(lookup[testName]).toEqual('DELETE');
           expectEventEmitted('pathupdated', testPath);
@@ -329,9 +329,9 @@ describe('RequestQueue', function () {
     it('testRemovePath', function (done) {
       addRequest('PUT');
       addRequest('DELETE', testPath, testDestName, testLocalPrefix, testRemotePrefix);
-      rq.removePath(testPath, function (err) {
+      rq.removePath(common.testTree, testPath, function (err) {
         expect(err).toBeFalsy();
-        rq.getRequests(testPath, function (err, lookup) {
+        rq.getRequests(common.testTree, testPath, function (err, lookup) {
           expect(err).toBeFalsy();
           expect(lookup[testName]).toBeFalsy();
           expect(lookup[testDestName]).toBeFalsy();
@@ -344,9 +344,9 @@ describe('RequestQueue', function () {
 
     it('testRemovePathSub', function (done) {
       addRequestOptions('DELETE', testPath + '/sub', testName, testLocalPrefix, testRemotePrefix);
-      rq.removePath(testPath, function (err) {
+      rq.removePath(common.testTree, testPath, function (err) {
         expect(err).toBeFalsy();
-        rq.getRequests(testPath + '/sub', function (err, lookup) {
+        rq.getRequests(common.testTree, testPath + '/sub', function (err, lookup) {
           expect(err).toBeFalsy();
           expect(lookup[testName]).toBeFalsy();
           expectEventEmitted('pathupdated', testPath);
@@ -358,9 +358,9 @@ describe('RequestQueue', function () {
 
     it('testRemovePathRoot', function (done) {
       addRequest('PUT');
-      rq.removePath('/', function (err) {
+      rq.removePath(common.testTree, '/', function (err) {
         expect(err).toBeFalsy();
-        rq.getRequests(testPath, function (err, lookup) {
+        rq.getRequests(common.testTree, testPath, function (err, lookup) {
           expect(err).toBeFalsy();
           expect(lookup[testName]).toBeFalsy();
           expectEventEmitted('pathupdated', '/');
@@ -375,12 +375,12 @@ describe('RequestQueue', function () {
     it('testCopyPath', function (done) {
       addRequest('PUT');
       addRequestOptions('DELETE', testPath, testDestName, testLocalPrefix, testRemotePrefix);
-      rq.copyPath(testPath, testDestPath, function (err) {
+      rq.copyPath(common.testTree, testPath, testDestPath, function (err) {
         expect(err).toBeFalsy();
-        rq.getRequests(testPath, function (err, lookup) {
+        rq.getRequests(common.testTree, testPath, function (err, lookup) {
           expect(err).toBeFalsy();
           expect(lookup[testName]).toEqual('PUT');
-          rq.getRequests(testDestPath, function (err, lookup) {
+          rq.getRequests(common.testTree, testDestPath, function (err, lookup) {
             expect(err).toBeFalsy();
             expect(lookup[testName]).toEqual('PUT');
             expect(lookup[testDestName]).toEqual('DELETE');
@@ -394,12 +394,12 @@ describe('RequestQueue', function () {
 
     it('testCopyPathSub', function (done) {
       addRequestOptions('PUT', testPath + '/sub', testName, testLocalPrefix, testRemotePrefix);
-      rq.copyPath(testPath, testDestPath, function (err) {
+      rq.copyPath(common.testTree, testPath, testDestPath, function (err) {
         expect(err).toBeFalsy();
-        rq.getRequests(testDestPath + '/sub', function (err, lookup) {
+        rq.getRequests(common.testTree, testDestPath + '/sub', function (err, lookup) {
           expect(err).toBeFalsy();
           expect(lookup[testName]).toEqual('PUT');
-          rq.getRequests(testPath + '/sub', function (err, lookup) {
+          rq.getRequests(common.testTree, testPath + '/sub', function (err, lookup) {
             expect(err).toBeFalsy();
             expect(lookup[testName]).toEqual('PUT');
             expectEventEmitted('pathupdated', testPath, true);
@@ -809,7 +809,7 @@ describe('RequestQueue', function () {
     });
 
     it('testQueueRequestDotFile', function (done) {
-      rq.queueRequest({
+      rq.queueRequest(common.testTree, {
         method: 'DELETE',
         path: '/.badfile',
         localPrefix: './localdir',
@@ -825,7 +825,7 @@ describe('RequestQueue', function () {
     });
 
     it('testQueueRequestDotFolder', function (done) {
-      rq.queueRequest({
+      rq.queueRequest(common.testTree, {
         method: 'DELETE',
         path: '/.badfolder/validfile',
         localPrefix: './localdir',
