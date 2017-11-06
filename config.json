@@ -87,28 +87,7 @@
         "backend": "fs",
         "description": "fs test share work",
         "path": "./smbrqwork"
-      },
-      "events": [
-        "syncfilestart",
-        "syncfileend",
-        "syncfileerr",
-        "syncfileabort",
-        "syncfileprogress",
-        "syncerr",
-        "syncpurged",
-        "syncconflict",
-        "folderlist",
-        "requestqueueinit",
-        "longdownload",
-        "downloadprogress",
-        "downloadstart",
-        "downloadend",
-        "downloaderr",
-        "networkloss"
-      ],
-      "preserveCacheFiles": [
-        "request-queue.nedb"
-      ]
+      }
     }
   }
 }
