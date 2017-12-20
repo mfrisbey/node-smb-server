@@ -50,8 +50,6 @@ MockRepository.toDateString = function (timestamp) {
 };
 
 MockRepository.prototype.addEntity = function (path, entity, cb) {
-  var self = this;
-
   var parent = utils.getParentPath(path);
 
   this.db.insert({path: path, parent: parent, entity: entity}, function (err) {

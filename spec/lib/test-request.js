@@ -58,7 +58,7 @@ TestRequest.prototype.setResponseCallback = function (callback) {
 TestRequest.prototype.end = function (data, encoding, cb) {
   var self = this;
 
-  function _doEnd(err, statusCode, data) {
+  function _doEnd(err, statusCode, endData) {
     if (err) {
       self.emit('error', err);
       if (cb) {
@@ -73,21 +73,23 @@ TestRequest.prototype.end = function (data, encoding, cb) {
       }
       var res = new TestResponse(statusCode);
 
-      if (data) {
-        res.end(data);
-      } else {
-        res.end();
+      if (endData) {
+        res.write(endData);
       }
 
-      res.emit('end');
+      res.on('finish', function () {
+        if (self.reqCb) {
+          self.reqCb(null, res, res.getWritten());
+        }
+        self.emit('response', res);
+        res.emit('end');
+        self.emit('end');
+        if (cb) {
+          cb(null, res);
+        }
+      });
 
-      self.emit('response', res);
-      if (cb) {
-        cb(null, res);
-      }
-      if (self.reqCb) {
-        self.reqCb(null, res, data);
-      }
+      res.end();
     }
   }
 

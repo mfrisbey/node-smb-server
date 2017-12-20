@@ -29,8 +29,8 @@ function RQCommon(config) {
   var port = RQCommon.getPort();
 
   self.mockRepo = new MockRepo();
-  self.hostPrefix = 'http://' + host + ':' + port;
-  self.urlPrefix = self.hostPrefix + '/api/assets';
+  self.hostPrefix = RQCommon.getHostRemotePrefix();
+  self.urlPrefix = RQCommon.getFullRemotePrefix();
 
   self.remotePrefix = RQCommon.getRemotePrefix();
   self.localPrefix = RQCommon.getLocalPrefix();
@@ -169,6 +169,18 @@ RQCommon.getLocalPrefix = function () {
   return '/local/path';
 };
 
+RQCommon.getHostRemotePrefix = function () {
+  return 'http://' + RQCommon.getHost() + ':' + RQCommon.getPort();
+};
+
+RQCommon.getFullRemotePrefix = function () {
+  return 'http://' + RQCommon.getHost() + ':' + RQCommon.getPort() + '/api/assets';
+};
+
+RQCommon.getFullRemotePrefixWithPath = function () {
+  return RQCommon.getFullRemotePrefix() + RQCommon.getRemotePrefix();
+};
+
 RQCommon.getRemotePrefix = function () {
   return '/remote/path';
 };
@@ -199,7 +211,8 @@ RQCommon.prototype.wasPathRequested = function (path) {
 };
 
 RQCommon.prototype.getPathMethodRequestCount = function (path, method) {
-  return this.request.getUrlMethodRequestCount(this.urlPrefix + this.remotePrefix + path, method);
+  var testPath = RQCommon.getFullRemotePrefix() + RQCommon.getRemotePrefix() + path;
+  return this.request.getUrlMethodRequestCount(testPath, method);
 };
 
 RQCommon.prototype.registerLocalPath = function (path, cb) {

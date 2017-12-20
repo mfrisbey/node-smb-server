@@ -221,6 +221,57 @@ describe('RequestQueue', function () {
     });
   });
 
+  describe('GetRequests', function () {
+    it('testGetAllRequests', function (done) {
+      addRequest('PUT');
+      addRequestOptions('PUT', testPath, testDestName, testLocalPrefix, testRemotePrefix);
+      rq.getAllRequests(common.testContext, function (err, requests) {
+        expect(err).toBeFalsy();
+        expect(requests.length).toEqual(2);
+        done();
+      });
+    });
+
+    it('testGetRequests', function (done) {
+      addRequest('PUT');
+      addRequestOptions('PUT', testPath, testDestName, testLocalPrefix, testRemotePrefix);
+      rq.getRequests(common.testContext, testPath, function (err, requests) {
+        expect(err).toBeFalsy();
+        expect(requests[testName]).toEqual('PUT');
+        expect(requests[testDestName]).toEqual('PUT');
+        done();
+      });
+    });
+
+    it('testExists', function (done) {
+      addRequest('PUT');
+      rq.exists(common.testContext, testPath, testName, function (err, exists) {
+        expect(err).toBeFalsy();
+        expect(exists).toBeTruthy();
+        rq.exists(common.testContext, testPath, testDestName, function (err, exists) {
+          expect(err).toBeFalsy();
+          expect(exists).toBeFalsy();
+          done();
+        });
+      });
+    });
+
+    it('testGetRequest', function (done) {
+      addRequest('PUT');
+      rq.getRequest(common.testContext, testPath, testName, function (err, request) {
+        expect(err).toBeFalsy();
+        expect(request.name).toEqual(testName);
+        expect(request.path).toEqual(testPath);
+        expect(request.method).toEqual('PUT');
+        rq.getRequest(common.testContext, testPath, testDestName, function (err, request) {
+          expect(err).toBeFalsy();
+          expect(request).toBeFalsy();
+          done();
+        });
+      });
+    });
+  });
+
   describe('PurgeFailedRequests', function () {
     it('testPurgeFailedRequests', function (done) {
       addRequest('PUT');

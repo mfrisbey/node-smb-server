@@ -117,7 +117,7 @@ describe('RQFile', function () {
                     expect(err).toBeFalsy();
                     expect(localFile.created()).toEqual(newLocalFile.created());
                     expect(localFile.lastModified()).toEqual(newLocalFile.lastModified());
-                    expect(c.testShare.emit.mostRecentCall.args[0]).toEqual('syncconflict');
+                    expect(c.testShare.emit).toHaveBeenCalledWith('shareEvent', {event: 'syncconflict', data: {path: '/testfile'}});
                     done();
                   });
                 });

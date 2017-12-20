@@ -162,6 +162,27 @@ describe('RQProcessor', function () {
       });
     });
 
+    it('testSyncMultiple', function (done) {
+      c.addQueuedFile('/testfile', function () {
+        c.addQueuedFile('/testfile2', function () {
+          processor.sync(config, function (err) {
+            expect(err).toBeFalsy();
+            c.expectLocalFileExist('/testfile', true, false, function () {
+              c.expectLocalFileExist('/testfile2', true, false, function () {
+                c.expectQueuedMethod('/', 'testfile', false, function () {
+                  c.expectQueuedMethod('/', 'testfile2', false, function () {
+                    expect(processor.emit).toHaveBeenCalledWith('syncend', {data: {path: '/testfile', file: '/local/path/testfile', method: 'POST'}, context: jasmine.any(Object)});
+                    expect(processor.emit).toHaveBeenCalledWith('syncend', {data: {path: '/testfile2', file: '/local/path/testfile2', method: 'POST'}, context: jasmine.any(Object)});
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+
     it('testSyncUpdate', function (done) {
       addLocalCachedFile('/testfile', function (file) {
         file.setLength(100, function (err) {
@@ -379,6 +400,71 @@ describe('RQProcessor', function () {
                 });
               });
             });
+          });
+        });
+      });
+    });
+  });
+
+  describe('SyncPath', function () {
+    it('testSyncPath', function (done) {
+      c.addQueuedFile('/testfilepath', function () {
+        processor.syncPath('/testfilepath', {
+          remotePrefix: RQCommon.getFullRemotePrefixWithPath(),
+          localPrefix: RQCommon.getLocalPrefix()
+        }, function (err) {
+          expect(err).toBeFalsy();
+          expect(c.getPathMethodRequestCount('/testfilepath', 'POST')).toEqual(1);
+          c.expectLocalFileExist('/testfilepath', true, false, function () {
+            c.expectQueuedMethod('/', 'testfilepath', false, done);
+          });
+        });
+      });
+    });
+
+    it('testSyncPathNotQueued', function (done) {
+      c.addCachedFile('/notqueued.jpg', function () {
+        processor.syncPath('/notqueued.jpg', {
+          remotePrefix: RQCommon.getFullRemotePrefixWithPath(),
+          localPrefix: RQCommon.getLocalPrefix()
+        },
+        function (err) {
+          expect(err).toBeFalsy();
+          expect(c.getPathMethodRequestCount('/notqueued.jpg', 'PUT')).toEqual(1);
+          c.expectLocalFileExist('/notqueued.jpg', true, false, function () {
+            c.expectQueuedMethod('/', 'notqueued.jpg', false, done);
+          });
+        });
+      });
+    });
+
+    it('testSyncPathDelete', function (done) {
+      c.addFile(c.remoteTree, '/testdelete.jpg', function () {
+        processor.syncPath('/testdelete.jpg', {
+          remotePrefix: RQCommon.getFullRemotePrefixWithPath(),
+          localPrefix: RQCommon.getLocalPrefix(),
+          isDelete: true
+        }, function (err) {
+          expect(err).toBeFalsy();
+          expect(c.getPathMethodRequestCount('/testdelete.jpg', 'DELETE')).toEqual(1);
+          c.expectLocalFileExist('/testdelete.jpg', false, false, function () {
+            c.expectQueuedMethod('/', 'testdelete.jpg', false, done);
+          });
+        });
+      });
+    });
+
+    it('testSyncPathQueuedWrongDelete', function (done) {
+      c.addQueuedFile('/testqueued.jpg', function () {
+        processor.syncPath('/testqueued.jpg', {
+          remotePrefix: RQCommon.getFullRemotePrefixWithPath(),
+          localPrefix: RQCommon.getLocalPrefix(),
+          isDelete: true
+        }, function (err) {
+          expect(err).toBeFalsy();
+          expect(c.getPathMethodRequestCount('/testqueued.jpg', 'POST')).toEqual(1);
+          c.expectLocalFileExist('/testqueued.jpg', true, false, function () {
+            c.expectQueuedMethod('/', 'testqueued.jpg', false, done);
           });
         });
       });

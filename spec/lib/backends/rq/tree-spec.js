@@ -314,7 +314,7 @@ describe('RQTree', function () {
         c.testTree.list('/*', function (err, files) {
           expect(err).toBeFalsy();
           expect(files.length).toEqual(1);
-          expect(c.testShare.emit.mostRecentCall.args[0]).toEqual('syncconflict');
+          expect(c.testShare.emit).toHaveBeenCalledWith('shareEvent', {event: 'syncconflict', data: {path: '/testlocal'}});
           c.expectLocalFileExist('/testlocal', true, false, done);
         });
       });
@@ -381,7 +381,7 @@ describe('RQTree', function () {
                 expectHasFile(files, '/testfile2');
                 expectHasFile(files, '/testfile3');
                 c.expectQueuedMethod('/', 'testfile3', false, function () {
-                  expect(c.testShare.emit.mostRecentCall.args[0]).toEqual('syncconflict');
+                  expect(c.testShare.emit).toHaveBeenCalledWith('shareEvent', {event: 'syncconflict', data: {path: '/testfile3'}});
                   c.expectLocalFileExist('/testfile3', true, false, done);
                 });
               });
@@ -602,7 +602,7 @@ describe('RQTree', function () {
                       c.expectPathExist(c.localTree, '/removeme/sub', true, function () {
                         c.expectLocalFileExist('/removeme/sub/file1', true, false, function () {
                           c.expectLocalFileExist('/removeme/sub/file2', false, false, function () {
-                            expect(c.testShare.emit.mostRecentCall.args[0]).toEqual('syncconflict');
+                            expect(c.testShare.emit).toHaveBeenCalledWith('shareEvent', {event: 'syncconflict', data: {path: '/removeme/sub/file1'}});
                             done();
                           });
                         });
@@ -636,8 +636,8 @@ describe('RQTree', function () {
                           c.testTree.deleteLocalDirectoryRecursive('/removeme', function (err) {
                             expect(err).toBeFalsy();
                             c.expectLocalFileExist('/remoteme/file3', false, false, function () {
-                              expect(c.testShare.emit).toHaveBeenCalledWith('syncconflict', {path: '/removeme/file3'});
-                              expect(c.testShare.emit).toHaveBeenCalledWith('syncconflict', {path: '/removeme/file1'});
+                              expect(c.testShare.emit).toHaveBeenCalledWith('shareEvent', {event: 'syncconflict', data: {path: '/removeme/file3'}});
+                              expect(c.testShare.emit).toHaveBeenCalledWith('shareEvent', {event: 'syncconflict', data: {path: '/removeme/file1'}});
                               done();
                             });
                           });
