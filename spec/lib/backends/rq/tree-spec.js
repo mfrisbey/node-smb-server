@@ -659,7 +659,7 @@ describe('RQTree', function () {
       var cacheName = '/newcached.jpg';
       c.addFile(c.remoteTree, '/notcached.jpg', function () {
         c.addQueuedFile(cacheName, function () {
-          c.testTree.checkCacheSize(1);
+          c.testTree.checkCacheSizeAndConflicts(1);
           c.testShare.on('shareEvent', function (data) {
             if (data.event == 'cachesize') {
               expect(data.data.cacheSize).toEqual(cacheName.length);
