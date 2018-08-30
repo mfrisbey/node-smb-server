@@ -10,6 +10,7 @@
  *  governing permissions and limitations under the License.
  */
 
+var _ = require('lodash');
 var common = require('../../test-common');
 var async = require('async');
 var RQShare = common.require(__dirname, '../../../../lib/backends/rq/share');
@@ -63,10 +64,12 @@ function RQCommon(config) {
       port: port,
       noprocessor: true,
       unicodeNormalizeForm: 'nfkc',
+      maxRetries: 2,
+      retryDelay: 500,
       options: {
         headers: {
           'user-agent': 'unit test framework'
-        }
+        }, forceEvents: true
       }
     };
   }
@@ -117,7 +120,8 @@ function RQCommon(config) {
     getEntityJson('/', true, cb);
   });
 
-  self.request.setRequestCallback(function (options, cb) {
+  self.request.setRequestCallback(function (origOptions, cb) {
+    var options = _.clone(origOptions);
     var invokeCallback = function () {
       // pass potentially modified options back to test request
       cb(options);
@@ -323,6 +327,10 @@ RQCommon.prototype.registerUrl = function (path, cb) {
 
 RQCommon.prototype.registerCreateAssetUrl = function (cb) {
   this.request.registerUrl(RQCommon.getFullRemoteContentPrefix() + this.remotePrefix + '.createasset.html', cb);
+};
+
+RQCommon.prototype.unregisterCreateAssetUrl = function (cb) {
+  this.request.unregisterUrl(RQCommon.getFullRemoteContentPrefix() + this.remotePrefix + '.createasset.html');
 };
 
 RQCommon.prototype.unregisterUrl = function (path) {

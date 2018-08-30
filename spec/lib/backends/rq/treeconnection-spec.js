@@ -111,6 +111,19 @@ describe('RQTreeConnection', function () {
     c.fs.truncate('/uploadassetchunk.jpg', 10 * 1024 * 1024, function (err) {
       expect(err).toBeFalsy();
       c.testShare.config.chunkUploadSize = 1;
+
+      var start = false;
+      var end = false;
+      c.testShare.on('shareEvent', function (data) {
+        if (data.event === 'syncfilestart') {
+          start = true;
+          expect(data.data.file).toEqual('/uploadassetchunk.jpg');
+        } else if (data.event === 'syncfileend') {
+          end = true;
+          expect(data.data.file).toEqual('/uploadassetchunk.jpg');
+        }
+      });
+
       c.testShare.emit('createasset', {
         context: c.testContext,
         options: {
@@ -124,6 +137,8 @@ describe('RQTreeConnection', function () {
           }
         }, callback: function (err) {
           expect(err).toBeFalsy();
+          expect(start).toBeTruthy();
+          expect(end).toBeTruthy();
           done();
         }
       });
@@ -152,6 +167,129 @@ describe('RQTreeConnection', function () {
           done();
         }
       });
+    });
+  });
+
+  it('testCreateAssetError', function (done) {
+    var date = new Date().getTime();
+    c.fs.createEntityWithDatesSync('/uploadassetchunkerror.jpg', false, '12345', date, date);
+    c.registerCreateAssetUrl(function (options, callback) {
+      callback('there was an error!');
+    });
+    var start = false;
+    var error = false;
+    c.testShare.on('shareEvent', function (event) {
+      if (event.event === 'syncfilestart') {
+        start = true;
+        expect(event.data.file).toEqual('/uploadassetchunkerror.jpg');
+      } else if (event.event === 'syncfileerr') {
+        error = true;
+        expect(event.data.file).toEqual('/uploadassetchunkerror.jpg');
+      }
+    });
+    c.testShare.emit('createasset', {
+      context: c.testContext,
+      options: {
+        path: '/uploadassetchunkerror_remote.jpg',
+        file: '/uploadassetchunkerror.jpg'
+      }, callback: function (err) {
+        expect(err).toBeTruthy();
+        expect(start).toBeTruthy();
+        expect(error).toBeTruthy();
+        done();
+      }
+    })
+  });
+
+  it('testCreateAssetRetry', function (done) {
+    var date = new Date().getTime();
+    var events = {};
+    c.fs.createEntityWithDatesSync('/uploadassetretry.jpg', false, '12345', date, date);
+    c.registerCreateAssetUrl(function (options, callback) {
+      c.unregisterCreateAssetUrl();
+      callback('there was an error!');
+    });
+    c.testShare.on('shareEvent', function (event) {
+      if (!events[event.event]) {
+        events[event.event] = 0;
+      }
+      events[event.event]++;
+    });
+
+    c.testShare.emit('createasset', {
+      context: c.testContext,
+      options: {
+        path: '/uploadassetretry_remote.jpg',
+        file: '/uploadassetretry.jpg'
+      }, callback: function (err) {
+        expect(err).toBeFalsy();
+        expect(events['syncfilestart']).toEqual(1);
+        expect(events['syncfileend']).toEqual(1);
+        expect(events['syncfileerr']).toBeFalsy();
+        done();
+      }
+    });
+  });
+
+  it('testCreateAssetRetriesExceeded', function (done) {
+    var date = new Date().getTime();
+    var events = {};
+    c.fs.createEntityWithDatesSync('/uploadassetretryexceeded.jpg', false, '12345', date, date);
+    c.registerCreateAssetUrl(function (options, callback) {
+      callback('there was an error!');
+    });
+    c.testShare.on('shareEvent', function (event) {
+      if (!events[event.event]) {
+        events[event.event] = 0;
+      }
+      events[event.event]++;
+    });
+
+    c.testShare.emit('createasset', {
+      context: c.testContext,
+      options: {
+        path: '/uploadassetretryexceeded_remote.jpg',
+        file: '/uploadassetretryexceeded.jpg'
+      }, callback: function (err) {
+        expect(err).toBeTruthy();
+        expect(events['syncfilestart']).toEqual(1);
+        expect(events['syncfileend']).toBeFalsy();
+        expect(events['syncfileerr']).toEqual(1);
+        done();
+      }
+    });
+  });
+
+  it('testCreateAssetPauseRetry', function (done) {
+    var date = new Date().getTime();
+    var events = {};
+    c.fs.createEntityWithDatesSync('/uploadassetpauseretry.jpg', false, '12345', date, date);
+    c.registerCreateAssetUrl(function (options, callback) {
+      callback('there was an error!');
+    });
+    c.testShare.on('shareEvent', function (event) {
+      if (!events[event.event]) {
+        events[event.event] = 0;
+      }
+      events[event.event]++;
+    });
+
+    c.testShare.emit('createasset', {
+      context: c.testContext,
+      options: {
+        path: '/uploadassetpauseretry_remote.jpg',
+        file: '/uploadassetpauseretry.jpg',
+        onChunk: function (nextOffset, totalSize, callback) {
+          expect(nextOffset).toEqual(0);
+          callback(true);
+        }
+      }, callback: function (err) {
+        expect(err).toBeFalsy();
+        expect(events['syncfilestart']).toEqual(1);
+        expect(events['syncfileend']).toEqual(1);
+        expect(events['syncfileerr']).toBeFalsy();
+        done();
+      }
     });
   });
 });
